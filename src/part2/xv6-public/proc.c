@@ -603,6 +603,7 @@ int myV2p(int address, int operation) {   //operation : 1 - read, 2 - write
 }
 
 
+
 int hasPages(int pid) {
   int flag = 0;
   struct proc *p;
@@ -616,6 +617,20 @@ int hasPages(int pid) {
       int pageWrite = 0;
       int pagePresent = 0;
       int pageRead = 0;
+      int pageTxt = 0;
+      int pageStack = 1;
+      int pageHeap = 0;
+      //  ||data and txt | guard page(1 page) | stack(1 page) | heap || KERNBASE
+      int virtualAddress = p->sz;       //size of .data + .txt
+      if (virtualAddress % PGSIZE == 0) {
+        pageTxt = virtualAddress / PGSIZE;
+      } else {
+        pageTxt = virtualAddress / PGSIZE + 1;
+      }
+      virtualAddress += PGSIZE;    //stack start address
+      virtualAddress += PGSIZE;    //heap start address
+      pageHeap  = ( KERNBASE - virtualAddress) / PGSIZE;
+      
 
       for (int i = 0; i < NPDENTRIES; i++) {
         pgtab = (pte_t *) P2V(PTE_ADDR(pgdir[i]));
@@ -634,10 +649,14 @@ int hasPages(int pid) {
           }
         }
       }
+      cprintf("Process                :%d\n", pid);
       cprintf("Valid Page Directory   :%d\n", validPde);
-      cprintf("Writable Page     :%d\n", pageWrite);
+      cprintf("Writable Page          :%d\n", pageWrite);
       cprintf("Present Page           :%d\n", pagePresent);
-      cprintf("Readable Page     :%d\n", pageRead);
+      cprintf("Readable Page          :%d\n", pageRead);
+      cprintf(".Txt and .Data Page    :%d\n", pageTxt);
+      cprintf("Stack Page             :%d\n", pageStack);
+      cprintf("Heap Page              :%d\n", pageHeap);
       break;
     }
     
